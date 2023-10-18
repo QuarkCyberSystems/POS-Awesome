@@ -210,7 +210,7 @@ export default {
       const letter_head = this.pos_profile.letter_head || 0;
       const url =
         frappe.urllib.get_base_url() +
-        '/printview?doctype=Sales%20Invoice&name=' +
+        '/api/method/frappe.utils.print_format.download_pdf?doctype=Sales%20Invoice&name=' +
         this.last_invoice +
         '&trigger_print=1' +
         '&format=' +
@@ -218,13 +218,13 @@ export default {
         '&no_letterhead=' +
         letter_head;
       const printWindow = window.open(url, 'Print');
-      printWindow.addEventListener(
-        'load',
-        function () {
-          printWindow.print();
-        },
-        true
-      );
+      //printWindow.addEventListener(
+      //  'load',
+      //  function () {
+      //    printWindow.print();
+      //  },
+      //  true
+      //);
     },
   },
   created: function () {
