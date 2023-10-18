@@ -627,7 +627,7 @@
             dark
             @click="submit"
             :disabled="vaildatPayment"
-            >{{ __('Submit Payments') }}</v-btn
+            >{{ __('Submit Payment') }}</v-btn
           >
         </v-col>
       </v-row>
@@ -857,7 +857,7 @@ export default {
       const letter_head = this.pos_profile.letter_head || 0;
       const url =
         frappe.urllib.get_base_url() +
-        '/printview?doctype=Sales%20Invoice&name=' +
+        '/api/method/frappe.utils.print_format.download_pdf?doctype=Sales%20Invoice&name=' +
         this.invoice_doc.name +
         '&trigger_print=1' +
         '&format=' +
@@ -869,7 +869,7 @@ export default {
         'load',
         function () {
           printWindow.print();
-          // printWindow.close();
+          printWindow.close();
           // NOTE : uncomoent this to auto closing printing window
         },
         true
