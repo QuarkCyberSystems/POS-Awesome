@@ -64,6 +64,19 @@
                     }}</v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
+                <v-list-item
+                  @click="pdf_last_invoice"
+                  v-if="this.last_invoice"
+                >
+                  <v-list-item-icon>
+                    <v-icon>mdi-file-pdf-box</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title>{{
+                      __('Last Invoice PDF')
+                    }}</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
                 <v-divider class="my-0"></v-divider>
                 <v-list-item @click="logOut">
                   <v-list-item-icon>
@@ -203,8 +216,30 @@ export default {
         },
       });
     },
+    pdf_last_invoice() {
+      if (!this.last_invoice) return;
+      var pdf_url = frappe.urllib.get_base_url() +
+        '/api/method/frappe.utils.print_format.download_pdf?' +
+        'doctype=Sales%20Invoice' +
+        '&name=' + encodeURIComponent(this.last_invoice) +
+        '&format=Tax%20Invoice%20-%20BT%20Printer' +
+        '&no_letterhead=0';
+      window.open(pdf_url, '_blank');
+    },
     print_last_invoice() {
       if (!this.last_invoice) return;
+      // Bixolon thermal print
+      if (window.qcs_bixolon && qcs_bixolon.printer && qcs_bixolon.printer.ready) {
+        frappe.xcall('qcs_bixolon.api.printer.reprint_invoice', {
+          invoice_name: this.last_invoice
+        }).then(function(data) {
+          if (data && data.invoice_data) {
+            qcs_bixolon.printer.printInvoice(data.invoice_data);
+          }
+        }).catch(function() {});
+        return;
+      }
+      // Fallback to browser print
       const print_format =
         this.pos_profile.print_format_for_online ||
         this.pos_profile.print_format;

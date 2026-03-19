@@ -649,6 +649,17 @@
             >{{ __("Submit & Print") }}</v-btn
           >
         </v-col>
+        <v-col cols="12" class="mt-1">
+          <v-btn
+            block
+            large
+            color="warning"
+            dark
+            @click="submit(undefined, false, false, true)"
+            :disabled="vaildatPayment"
+            >{{ __("Submit & PDF") }}</v-btn
+          >
+        </v-col>
         <v-col cols="12">
           <v-btn
             block
@@ -735,7 +746,7 @@ export default {
       evntBus.$emit("show_payment", "false");
       evntBus.$emit("set_customer_readonly", false);
     },
-    submit(event, payment_received = false, print = false) {
+    submit(event, payment_received = false, print = false, pdf = false) {
       if (!this.invoice_doc.is_return && this.total_payments < 0) {
         evntBus.$emit("show_mesage", {
           text: `Payments not correct`,
@@ -846,7 +857,7 @@ export default {
         return;
       }
 
-      this.submit_invoice(print);
+      this.submit_invoice(print, pdf);
       this.customer_credit_dict = [];
       this.redeem_customer_credit = false;
       this.is_cashback = true;
@@ -855,7 +866,7 @@ export default {
       evntBus.$emit("new_invoice", "false");
       this.back_to_invoice();
     },
-    submit_invoice(print) {
+    submit_invoice(print, pdf = false) {
       let totalPayedAmount = 0;
       this.invoice_doc.payments.forEach((payment) => {
         payment.amount = flt(payment.amount);
@@ -889,8 +900,23 @@ export default {
         async: true,
         callback: function (r) {
           if (r.message) {
-            if (print) {
-              vm.load_print_page();
+            if (print && window.qcs_bixolon && qcs_bixolon.printer && qcs_bixolon.printer.ready) {
+              frappe.xcall('qcs_bixolon.api.printer.reprint_invoice', {
+                invoice_name: r.message.name
+              }).then(function(data) {
+                if (data && data.invoice_data) {
+                  qcs_bixolon.printer.printInvoice(data.invoice_data);
+                }
+              }).catch(function() {});
+            }
+            if (pdf) {
+              var pdf_url = frappe.urllib.get_base_url() +
+                '/api/method/frappe.utils.print_format.download_pdf?' +
+                'doctype=Sales%20Invoice' +
+                '&name=' + encodeURIComponent(r.message.name) +
+                '&format=Tax%20Invoice%20-%20BT%20Printer' +
+                '&no_letterhead=0';
+              window.open(pdf_url, '_blank');
             }
             evntBus.$emit("set_last_invoice", vm.invoice_doc.name);
             evntBus.$emit("show_mesage", {
