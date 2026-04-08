@@ -228,8 +228,14 @@ export default {
     },
     print_last_invoice() {
       if (!this.last_invoice) return;
-      // Bixolon thermal print
-      if (window.qcs_bixolon && qcs_bixolon.printer && qcs_bixolon.printer.ready) {
+      // Bixolon thermal print (only if enabled on this POS Profile)
+      if (
+        this.pos_profile &&
+        this.pos_profile.posa_use_bixolon_printer &&
+        window.qcs_bixolon &&
+        qcs_bixolon.printer &&
+        qcs_bixolon.printer.ready
+      ) {
         frappe.xcall('qcs_bixolon.api.printer.reprint_invoice', {
           invoice_name: this.last_invoice
         }).then(function(data) {

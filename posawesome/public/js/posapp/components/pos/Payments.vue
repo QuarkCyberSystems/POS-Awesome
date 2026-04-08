@@ -900,14 +900,42 @@ export default {
         async: true,
         callback: function (r) {
           if (r.message) {
-            if (print && window.qcs_bixolon && qcs_bixolon.printer && qcs_bixolon.printer.ready) {
-              frappe.xcall('qcs_bixolon.api.printer.reprint_invoice', {
-                invoice_name: r.message.name
-              }).then(function(data) {
-                if (data && data.invoice_data) {
-                  qcs_bixolon.printer.printInvoice(data.invoice_data);
+            if (print) {
+              const use_bixolon =
+                vm.pos_profile &&
+                vm.pos_profile.posa_use_bixolon_printer &&
+                window.qcs_bixolon &&
+                qcs_bixolon.printer &&
+                qcs_bixolon.printer.ready;
+              if (use_bixolon) {
+                frappe.xcall('qcs_bixolon.api.printer.reprint_invoice', {
+                  invoice_name: r.message.name
+                }).then(function(data) {
+                  if (data && data.invoice_data) {
+                    qcs_bixolon.printer.printInvoice(data.invoice_data);
+                  }
+                }).catch(function() {});
+              } else {
+                // Fallback: standard browser print via printview
+                const print_format =
+                  vm.pos_profile.print_format_for_online ||
+                  vm.pos_profile.print_format;
+                const letter_head = vm.pos_profile.letter_head || 0;
+                const url =
+                  frappe.urllib.get_base_url() +
+                  '/printview?doctype=Sales%20Invoice&name=' +
+                  encodeURIComponent(r.message.name) +
+                  '&trigger_print=1&format=' +
+                  print_format +
+                  '&no_letterhead=' +
+                  letter_head;
+                const printWindow = window.open(url, 'Print');
+                if (printWindow) {
+                  printWindow.addEventListener('load', function () {
+                    printWindow.print();
+                  }, true);
                 }
-              }).catch(function() {});
+              }
             }
             if (pdf) {
               var pdf_url = frappe.urllib.get_base_url() +
